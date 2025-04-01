@@ -36,14 +36,40 @@ def hadamard():
     return 1/np.sqrt(2) * np.array([[1, 1], [1, -1]], dtype=complex)
 
 
-
-
 def U1(theta):
     """
     U1 gate
     """
     return np.array([[1, 0], [0, np.exp(1j * theta)]], type=complex)
 
+
+def swap(index1: int, index2: int, n_qubits: int) -> np.ndarray:
+    """
+    Swap gate
+    """
+
+    SWAP = np.zeros((2**n_qubits, 2**n_qubits), dtype=complex)
+
+    for i in range(2**n_qubits):
+        # Convert i to binary representation
+        bin_i = np.binary_repr(i, width=n_qubits).zfill(n_qubits)
+
+        if (bin_i[index1] == bin_i[index2]):
+            SWAP[i, i] = 1
+        else:
+            # Swap the bits!
+            bin_copy = list(bin_i)
+
+            bin_copy[index1] = bin_i[index2]
+            bin_copy[index2] = bin_i[index1]
+            # Convert to binary string
+            bin_copy = ''.join(bin_copy)
+            # Convert back to decimal
+            swap_i = int(bin_copy, 2)
+            SWAP[swap_i, i] = 1
+            SWAP[i, swap_i] = 1
+
+    return SWAP
 
 
 def CU1(theta: float, control_index: int, target_index: int, n_qubits: int) -> np.ndarray:
@@ -66,32 +92,24 @@ def qft(n_qubits: int) -> np.ndarray:
     for i in range(n_qubits):
         Hi = multi_qubit_gate(H, i, n_qubits)
         QFT = Hi @ QFT
-        print("applying Hadamard to", i, "!")
+        # print("applying Hadamard to", i, "!")
+        # print(QFT)
         for j in range(i+1, n_qubits):
-            theta = 2 * np.pi / (2**(j - i ))
-            print("applying rotation", theta/np.pi, "to:", i, j)
+            theta = 2 * np.pi / (2**(j - i +1))
+            # print("applying rotation", theta/np.pi, "to:", i, j)
             U = CU1(theta, j, i, n_qubits)
             QFT = U @ QFT
+
+    # Reverse bit order
+    for i in range(n_qubits // 2):
+        QFT = swap(i, n_qubits - i - 1, n_qubits) @ QFT
+    
     return QFT
 
 
 
 
-# TEMPORARY - should probably be removed
-def bit_reversal_permutation(n_qubits: int) -> np.ndarray:
-    """
-    Bit reversal permutation matrix
-    """
-    n = 2**n_qubits
-    perm = np.zeros((n, n), dtype=complex)
-    
-    for i in range(n):
-        # Reverse the bits of i
-        reversed_i = int(bin(i)[2:].zfill(n_qubits)[::-1], 2)
-        print(i, reversed_i)
-        perm[i, reversed_i] = 1
-    
-    return perm
+
 
 
 if __name__ == "__main__":
@@ -99,26 +117,11 @@ if __name__ == "__main__":
 
     np.set_printoptions(precision=2, suppress=True, linewidth=200)
 
-    qft_linalg = quantum_fourier_transform(8)
+    n_qubits = 10
 
-    n_qubits = 3
+    qft_linalg = quantum_fourier_transform(2**n_qubits)
     qft_matrix = qft(n_qubits)
-
-    P = bit_reversal_permutation(3)
-
-    print( qft_linalg )
-    print()
-    print(qft_matrix)
+    print(np.linalg.norm(qft_linalg - qft_matrix))
 
 
 
-A = CU1(np.pi/2, 0, 2, 4)
-# print(A)
-# B = alt_CU1(np.pi/2, 0, 1, 3)
-# print(B)
-# print(np.linalg.norm(A - B))
-
-
-
-
-print(P)
