@@ -1,6 +1,8 @@
 import numpy as np
 
 
+
+
 def multi_kron(*args):
     """
     Kronecker product of multiple matrices
@@ -51,21 +53,24 @@ def swap(index1: int, index2: int, n_qubits: int) -> np.ndarray:
     SWAP = np.zeros((2**n_qubits, 2**n_qubits), dtype=complex)
 
     for i in range(2**n_qubits):
-        # Convert i to binary representation
         bin_i = np.binary_repr(i, width=n_qubits).zfill(n_qubits)
 
         if (bin_i[index1] == bin_i[index2]):
             SWAP[i, i] = 1
         else:
-            # Swap the bits!
+            # We will now swap the bits! 
+            # We here find the index of the vector to swap with: 
             bin_copy = list(bin_i)
-
             bin_copy[index1] = bin_i[index2]
             bin_copy[index2] = bin_i[index1]
-            # Convert to binary string
+
+            # Convert to string
             bin_copy = ''.join(bin_copy)
+
             # Convert back to decimal
             swap_i = int(bin_copy, 2)
+
+            # Perform the swap
             SWAP[swap_i, i] = 1
             SWAP[i, swap_i] = 1
 
@@ -84,44 +89,6 @@ def CU1(theta: float, control_index: int, target_index: int, n_qubits: int) -> n
 
 
 
-def qft(n_qubits: int) -> np.ndarray:
-    H = hadamard()
-
-    QFT = np.eye(2**n_qubits, dtype=complex)
-
-    for i in range(n_qubits):
-        Hi = multi_qubit_gate(H, i, n_qubits)
-        QFT = Hi @ QFT
-        # print("applying Hadamard to", i, "!")
-        # print(QFT)
-        for j in range(i+1, n_qubits):
-            theta = 2 * np.pi / (2**(j - i +1))
-            # print("applying rotation", theta/np.pi, "to:", i, j)
-            U = CU1(theta, j, i, n_qubits)
-            QFT = U @ QFT
-
-    # Reverse bit order
-    for i in range(n_qubits // 2):
-        QFT = swap(i, n_qubits - i - 1, n_qubits) @ QFT
-    
-    return QFT
-
-
-
-
-
-
-
-if __name__ == "__main__":
-    from linear_algebra import quantum_fourier_transform
-
-    np.set_printoptions(precision=2, suppress=True, linewidth=200)
-
-    n_qubits = 10
-
-    qft_linalg = quantum_fourier_transform(2**n_qubits)
-    qft_matrix = qft(n_qubits)
-    print(np.linalg.norm(qft_linalg - qft_matrix))
 
 
 
