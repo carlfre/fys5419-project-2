@@ -86,9 +86,3 @@ def CU1(theta: float, control_index: int, target_index: int, n_qubits: int) -> n
 
     diag = diag.flatten()
     return np.diag(diag)
-
-
-
-
-
-
