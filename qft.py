@@ -49,8 +49,13 @@ if __name__ == "__main__":
     from linear_algebra import quantum_fourier_transform
 
 
-    N = 6
+    N = 3
     QFT = qft(N)
-    iQFT = inverse_qft(N)
 
-    print(np.linalg.norm(QFT @ iQFT - np.eye(16)))
+
+
+    # iQFT = inverse_qft(N)
+
+    # print(np.linalg.norm(QFT @ iQFT - np.eye(16)))
+    print(QFT)
+

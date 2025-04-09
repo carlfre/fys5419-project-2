@@ -42,7 +42,7 @@ def U1(theta):
     """
     U1 gate
     """
-    return np.array([[1, 0], [0, np.exp(1j * theta)]], type=complex)
+    return np.array([[1, 0], [0, np.exp(1j * theta)]], dtype=complex)
 
 
 def swap(index1: int, index2: int, n_qubits: int) -> np.ndarray:
@@ -86,3 +86,69 @@ def CU1(theta: float, control_index: int, target_index: int, n_qubits: int) -> n
 
     diag = diag.flatten()
     return np.diag(diag)
+
+
+def controlled_U_gate(t: int, U: np.ndarray, control_index: int) -> np.ndarray:
+
+
+    n = U.shape[0]
+    m = round(np.log2(n))
+    
+
+
+    n_qubits = t + m
+
+
+    mat = np.zeros((2**n_qubits, 2**n_qubits), dtype=complex)
+
+
+
+    for i in range(2**t):
+        binary = np.binary_repr(i, width=t)
+
+        start_of_block = binary + '0' * m
+        end_of_block = binary + '1' * m
+
+        start_of_block = int(start_of_block, 2)
+        end_of_block = int(end_of_block, 2)
+        # print(start_of_block, end_of_block)
+        if binary[control_index] == '1':
+            mat[start_of_block:end_of_block + 1, start_of_block:end_of_block + 1] = U
+
+        elif binary[control_index] == '0':
+            mat[start_of_block:end_of_block + 1, start_of_block:end_of_block + 1] = identity(n)
+        else: 
+            raise ValueError("Control index must be either 0 or 1.")
+
+    
+    return mat
+
+
+
+def U_mult_a(a: int, N: int, n_qubits: int) -> np.ndarray:
+
+    if N >= 2**n_qubits:
+        raise ValueError("N must be strictly less than 2^n_qubits.")
+
+    U = np.zeros((2**n_qubits, 2**n_qubits), dtype=complex)
+
+    for k in range(N):
+        U[(a*k) % N, k] = 1
+
+    for k in range(N+1, 2**n_qubits):
+        U[k, k] = 1
+
+    return U
+
+
+
+
+
+# np.set_printoptions(precision=3, suppress=True, linewidth=200)
+
+# t = 2
+
+# U = np.array([[1, 0], [0, np.exp(1j * np.pi / 4)]])
+# control_index = 1
+
+# print(controlled_U_gate(t, U, control_index))
