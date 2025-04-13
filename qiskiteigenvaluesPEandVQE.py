@@ -1,12 +1,9 @@
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
-import numpy as np
-from numpy import pi
-from qiskit.circuit import Gate, QuantumRegister, ClassicalRegister
-from typing import List
-from qiskit.circuit.library import UnitaryGate
 from scipy.linalg import expm
-# Import VQE class
+from qiskit.circuit import Gate, QuantumRegister, ClassicalRegister
+from qiskit.circuit.library import UnitaryGate
+import numpy as np
 from vqe.vqe import VQE
 
 def run_and_get_counts(circuit: QuantumCircuit, shots=1024) -> dict:
@@ -30,7 +27,7 @@ def inverse_qft(qc: QuantumCircuit, n: int):
     for j in reversed(range(n)):
         qc.h(j)
         for k in reversed(range(j)):
-            qc.cp(-pi / float(2**(j - k)), k, j)
+            qc.cp(-np.pi / float(2**(j - k)), k, j)
 
 def phase_estimation(unitary_gate: Gate, num_counting_qubits: int, eigenstate: QuantumRegister, main_circuit: QuantumCircuit):
     """Phase estimation."""
@@ -60,7 +57,7 @@ def estimate_phase_from_counts_arbitrary(counts: dict, num_counting_qubits: int)
 
     for key, count in counts.items():
         decimal_representation = int(key, 2)
-        phase_contribution = (decimal_representation / (2**num_counting_qubits)) * 2 * pi
+        phase_contribution = (decimal_representation / (2**num_counting_qubits)) * 2 * np.pi
         probability = count / total_shots
         estimated_phase += phase_contribution * probability
 
@@ -85,25 +82,15 @@ if __name__ == "__main__":
     actual_eigenvalues_2x2 = np.linalg.eigvals(H_2x2)
     print("Actual 2x2 Eigenvalues:", actual_eigenvalues_2x2)
 
-    # Eigenstate 1
-    eigenstate_2x2_0 = QuantumRegister(1, name="eigenstate_2x2_0")
-    main_circuit_2x2_0 = QuantumCircuit(eigenstate_2x2_0)
-    # Initialize eigenstate_2x2_0
-    phase_estimation(U_2x2, num_counting_qubits, eigenstate_2x2_0, main_circuit_2x2_0)
-    counts_2x2_0 = run_and_get_counts(main_circuit_2x2_0)
-    estimated_phase_2x2_0 = estimate_phase_from_counts_arbitrary(counts_2x2_0, num_counting_qubits)
-    estimated_eigenvalue_2x2_0 = estimated_phase_2x2_0 / time
-    print("Estimated 2x2 Eigenvalue 1:", estimated_eigenvalue_2x2_0)
-
-    # Eigenstate 2
-    eigenstate_2x2_1 = QuantumRegister(1, name="eigenstate_2x2_1")
-    main_circuit_2x2_1 = QuantumCircuit(eigenstate_2x2_1)
-    # Initialize eigenstate_2x2_1
-    phase_estimation(U_2x2, num_counting_qubits, eigenstate_2x2_1, main_circuit_2x2_1)
-    counts_2x2_1 = run_and_get_counts(main_circuit_2x2_1)
-    estimated_phase_2x2_1 = estimate_phase_from_counts_arbitrary(counts_2x2_1, num_counting_qubits)
-    estimated_eigenvalue_2x2_1 = estimated_phase_2x2_1 / time
-    print("Estimated 2x2 Eigenvalue 2:", estimated_eigenvalue_2x2_1)
+    for i in range(2):
+        eigenstate = QuantumRegister(1, name=f"eigenstate_2x2_{i}")
+        main_circuit = QuantumCircuit(eigenstate)
+        # Initialize eigenstate
+        phase_estimation(U_2x2, num_counting_qubits, eigenstate, main_circuit)
+        counts = run_and_get_counts(main_circuit)
+        estimated_phase = estimate_phase_from_counts_arbitrary(counts, num_counting_qubits)
+        estimated_eigenvalue = estimated_phase / time
+        print(f"Estimated 2x2 Eigenvalue {i+1}:", estimated_eigenvalue)
 
     # VQE Calculation
     vqe_energy_2x2 = VQE.vqe_for_2x2_hamiltonian(H_2x2)
@@ -129,45 +116,15 @@ if __name__ == "__main__":
     actual_eigenvalues_4x4 = np.linalg.eigvals(H_4x4)
     print("\nActual 4x4 Eigenvalues:", actual_eigenvalues_4x4)
 
-    # Eigenstate 1
-    eigenstate_4x4_0 = QuantumRegister(2, name="eigenstate_4x4_0")
-    main_circuit_4x4_0 = QuantumCircuit(eigenstate_4x4_0)
-    # Initialize eigenstate_4x4_0
-    phase_estimation(U_4x4, num_counting_qubits, eigenstate_4x4_0, main_circuit_4x4_0)
-    counts_4x4_0 = run_and_get_counts(main_circuit_4x4_0)
-    estimated_phase_4x4_0 = estimate_phase_from_counts_arbitrary(counts_4x4_0, num_counting_qubits)
-    estimated_eigenvalue_4x4_0 = estimated_phase_4x4_0 / time
-    print("Estimated 4x4 Eigenvalue 1:", estimated_eigenvalue_4x4_0)
-
-    # Eigenstate 2
-    eigenstate_4x4_1 = QuantumRegister(2, name="eigenstate_4x4_1")
-    main_circuit_4x4_1 = QuantumCircuit(eigenstate_4x4_1)
-    # Initialize eigenstate_4x4_1
-    phase_estimation(U_4x4, num_counting_qubits, eigenstate_4x4_1, main_circuit_4x4_1)
-    counts_4x4_1 = run_and_get_counts(main_circuit_4x4_1)
-    estimated_phase_4x4_1 = estimate_phase_from_counts_arbitrary(counts_4x4_1, num_counting_qubits)
-    estimated_eigenvalue_4x4_1 = estimated_phase_4x4_1 / time
-    print("Estimated 4x4 Eigenvalue 2:", estimated_eigenvalue_4x4_1)
-
-    # Eigenstate 3
-    eigenstate_4x4_2 = QuantumRegister(2, name="eigenstate_4x4_2")
-    main_circuit_4x4_2 = QuantumCircuit(eigenstate_4x4_2)
-    # Initialize eigenstate_4x4_2
-    phase_estimation(U_4x4, num_counting_qubits, eigenstate_4x4_2, main_circuit_4x4_2)
-    counts_4x4_2 = run_and_get_counts(main_circuit_4x4_2)
-    estimated_phase_4x4_2 = estimate_phase_from_counts_arbitrary(counts_4x4_2, num_counting_qubits)
-    estimated_eigenvalue_4x4_2 = estimated_phase_4x4_2 / time
-    print("Estimated 4x4 Eigenvalue 3:", estimated_eigenvalue_4x4_2)
-
-    # Eigenstate 4
-    eigenstate_4x4_3 = QuantumRegister(2, name="eigenstate_4x4_3")
-    main_circuit_4x4_3 = QuantumCircuit(eigenstate_4x4_3)
-    # Initialize eigenstate_4x4_3
-    phase_estimation(U_4x4, num_counting_qubits, eigenstate_4x4_3, main_circuit_4x4_3)
-    counts_4x4_3 = run_and_get_counts(main_circuit_4x4_3)
-    estimated_phase_4x4_3 = estimate_phase_from_counts_arbitrary(counts_4x4_3, num_counting_qubits)
-    estimated_eigenvalue_4x4_3 = estimated_phase_4x4_3 / time
-    print("Estimated 4x4 Eigenvalue 4:", estimated_eigenvalue_4x4_3)
+    for i in range(4):
+        eigenstate = QuantumRegister(2, name=f"eigenstate_4x4_{i}")
+        main_circuit = QuantumCircuit(eigenstate)
+        # Initialize eigenstate
+        phase_estimation(U_4x4, num_counting_qubits, eigenstate, main_circuit)
+        counts = run_and_get_counts(main_circuit)
+        estimated_phase = estimate_phase_from_counts_arbitrary(counts, num_counting_qubits)
+        estimated_eigenvalue = estimated_phase / time
+        print(f"Estimated 4x4 Eigenvalue {i+1}:", estimated_eigenvalue)
 
     # VQE Calculation
     vqe_energy_4x4 = VQE.vqe_for_4x4_hamiltonian(H_4x4)

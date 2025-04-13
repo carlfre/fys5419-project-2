@@ -1,10 +1,11 @@
 from qiskit import QuantumCircuit
-import numpy as np
 from qiskit_aer import AerSimulator
 from qiskit.result import Result
 from qiskit.exceptions import QiskitError
+from qiskit.quantum_info import Statevector  
+from qiskit.circuit.library import QFT
+import numpy as np
 import cmath
-from qiskit.quantum_info import Statevector  # Import Statevector
 
 
 def run_and_get_statevector(circuit: QuantumCircuit) -> Result:
@@ -15,7 +16,6 @@ def run_and_get_statevector(circuit: QuantumCircuit) -> Result:
     job = simulator.run(circuit, shots=1)  # shots=1 to get a single statevector
     result = job.result()
     return result
-
 
 def print_formatted_statevector(statevector: Statevector, num_qubits: int):
     """Prints the statevector in the desired format."""
@@ -59,6 +59,12 @@ def iqft_nq(n):
         qc.h(j)  # Hadamard on qubit j
     return qc
 
+def create_qft_circuits_dict(n):
+    circuits = {
+        f"qc_qft_{n}":  (QFT(num_qubits = n, do_swaps=True, inverse=False), f"{n}-Qubit QFT", n),
+        f"qc_iqft_{n}": (QFT(num_qubits = n, do_swaps=True, inverse=True), f"{n}-Qubit IQFT", n)
+    }
+    return circuits
 
 if __name__ == '__main__':
     # Test for n = 4 as an example
@@ -66,24 +72,38 @@ if __name__ == '__main__':
     qc_qft = qft_nq(n)
     qc_iqft = iqft_nq(n)
 
-    print(f"{n}-Qubit QFT:")
-    print(qc_qft)
-    print("Statevector:")
-    try:
-        result = run_and_get_statevector(qc_qft)
-        statevector = result.get_statevector()
-        print_formatted_statevector(statevector, n)
-    except QiskitError as e:
-        print(f"  Error: {e}")
+    names = [f"{n}-Qubit QFT", f"{n}-Qubit IQFT"]
+    listqftandiqft = [qc_qft,qc_iqft]
+    numqubits = [n,n]
 
-    print(f"\n{n}-Qubit Inverse QFT:")
-    print(qc_iqft)
-    print("Statevector:")
-    try:
-        result = run_and_get_statevector(qc_iqft)
-        statevector = result.get_statevector()
-        print_formatted_statevector(statevector, n)
-    except QiskitError as e:
-        print(f"  Error: {e}")
+    for i, j, k in zip(names, listqftandiqft, numqubits):
+        print(i)          # Use the dictionary value (e.g., "1-Qubit QFT")
+        print(j)          # Prints the key (e.g., qc_qft_1 object)
+        print("Statevector:")
+        try:
+            result = run_and_get_statevector(j)
+            statevector = result.get_statevector()
+            print_formatted_statevector(statevector, k)
+            print()
+        except QiskitError as e:
+            print(f"  Error: {e}")
 
+
+#----------Qiskit's inbuilt QFT and IQFT-----------#
+    # Create circuits
+    circuits_dict = create_qft_circuits_dict(n)
+
+    # Loop with decomposition
+    for name, (circuit, label, j) in circuits_dict.items():
+        print(f"{label}:")
+        print("Statevector:")
+        try:
+            # Decompose the QFT circuit into basic gates
+            decomposed_circuit = circuit.decompose()
+            result = run_and_get_statevector(decomposed_circuit)
+            statevector = result.get_statevector()
+            print_formatted_statevector(statevector, j)
+            print()
+        except QiskitError as e:
+            print(f"  Error: {e}")
     
