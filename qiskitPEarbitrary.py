@@ -29,7 +29,7 @@ def print_formatted_statevector(statevector: Statevector, total_qubits: int):
         # Use cmath.phase for complex numbers, handle near-zero probability
         phase = cmath.phase(amplitude) if probability > 1e-9 else 0.0
 
-        # Only print states with significant probability to avoid clutter
+        # Only print states with significant probability 
         if probability > 1e-6:
             print(
                 f"|{binary_state}> ({i}): ampl: {amplitude:.3f} prob: {probability:.3f} Phase: {phase:.3f}"
@@ -107,20 +107,14 @@ def estimate_phase_from_counts_arbitrary(counts: dict, num_counting_qubits: int)
              print(f"Warning: Measured state '{state_str}' has unexpected length. Expected {num_counting_qubits}. Skipping.")
              continue
 
-        # --- Core Correction Logic ---
         # Reverse the measured string because standard iQFT outputs bits in reverse order.
         reversed_state_str = state_str[::-1]
-        # ---------------------------
-
         # Convert the *reversed* binary string to its integer representation (k)
         k = int(reversed_state_str, 2)
-
         # Calculate the fractional phase contribution: phi_k = k / 2^n
         phase_contribution = k / (2**num_counting_qubits)
-
         # Calculate the probability of this measurement outcome
         probability = count / total_shots
-
         # Add the weighted contribution to the average fractional phase
         estimated_phase_phi += phase_contribution * probability
 
@@ -131,23 +125,13 @@ def estimate_phase_from_counts_arbitrary(counts: dict, num_counting_qubits: int)
 
 
 if __name__ == "__main__":
-    # 1. DEFINE THE PHASE YOU WANT TO ESTIMATE
-    actual_theta = np.pi / 4  # Example: Set the target phase to pi
+ 
+    actual_theta = np.pi / 4  # Target phase to estimate
+    rz_param = 2 * actual_theta # Since Rz(lambda)|1> = exp(i*lambda/2)|1>, we need lambda = 2 * actual_theta as rz_param
+    U = get_u(rz_param) # Create the unitary gate
+    actual_phi = actual_theta / (2 * np.pi) # Calculate the fractional phase for reference
+    qubit_counts = [1,2,3,4]  # Test multiple counting qubit counts
 
-    # 2. CALCULATE THE REQUIRED Rz PARAMETER
-    # Since Rz(lambda)|1> = exp(i*lambda/2)|1>, we need lambda = 2 * actual_theta
-    rz_param = 2 * actual_theta
-
-    # 3. CREATE THE UNITARY GATE USING THE CORRECT PARAMETER
-    U = get_u(rz_param)
-
-    # Calculate the fractional phase for reference
-    actual_phi = actual_theta / (2 * np.pi)
-
-    # Test multiple counting qubit counts
-    qubit_counts = [1,2,3]  # Example: test with 2, 3, and 4 counting qubits
-
-    # --- Custom Phase Estimation ---
     print("--- Custom Phase Estimation ---")
     for num_counting_qubits in qubit_counts:
         total_qubits = num_counting_qubits + 1
@@ -166,17 +150,16 @@ if __name__ == "__main__":
         result_sv = job_sv.result()
         statevector = result_sv.get_statevector()
         print(f"\n{num_counting_qubits}-Counting Qubit Statevector (Total Qubits: {total_qubits}):")
-        print_formatted_statevector(statevector, total_qubits) # Use corrected printer
+        print_formatted_statevector(statevector, total_qubits) 
 
         # --- Counts Simulation ---
         counts = run_and_get_counts(qc_pe, shots=1000) # Use the circuit with measurements
         print(f"\n{num_counting_qubits}-Counting Qubit Measurement Counts:", counts)
 
         # --- Phase Estimation ---
-        # Use the corrected estimation function
         estimated_phase = estimate_phase_from_counts_arbitrary(counts, num_counting_qubits)
         print(f"Estimated Phase ({num_counting_qubits}-counting qubit): {estimated_phase:.4f} radians")
-        # Print the actual_theta you defined at the start
+        # Print the actual_theta defined at the start
         print(f"Actual Phase ({num_counting_qubits}-counting qubit):    {actual_theta:.4f} radians")
         print(f"(Actual Phase as fraction phi = theta/2pi: {actual_phi:.4f})")
         print()
@@ -186,7 +169,7 @@ if __name__ == "__main__":
     for num_counting_qubits in qubit_counts:
         total_qubits = num_counting_qubits + 1
         print(f"\n{num_counting_qubits}-Counting Qubit Phase Estimation Circuit (Qiskit):")
-        # Pass the same U (created with correct rz_param) and actual_theta for reference
+        # Pass the same U and actual_theta for reference
         qc_pe_qiskit = phase_estimation_qiskit(num_counting_qubits, U, actual_theta)
         print(qc_pe_qiskit.draw(output='text'))
 
@@ -200,14 +183,13 @@ if __name__ == "__main__":
         result_sv_q = job_sv_q.result()
         statevector_q = result_sv_q.get_statevector()
         print(f"\n{num_counting_qubits}-Counting Qubit Statevector (Qiskit, Total Qubits: {total_qubits}):")
-        print_formatted_statevector(statevector_q, total_qubits) # Use corrected printer
+        print_formatted_statevector(statevector_q, total_qubits)
 
         # --- Counts Simulation (Qiskit) ---
         counts_qiskit = run_and_get_counts(qc_pe_qiskit, shots=1000) # Use circuit with measurements
         print(f"\n{num_counting_qubits}-Counting Qubit Measurement Counts (Qiskit):", counts_qiskit)
 
         # --- Phase Estimation (Qiskit) ---
-        # Use the corrected estimation function
         estimated_phase_qiskit = estimate_phase_from_counts_arbitrary(counts_qiskit, num_counting_qubits)
         print(f"Estimated Phase ({num_counting_qubits}-counting qubit, Qiskit): {estimated_phase_qiskit:.4f} radians")
         # Print the actual_theta defined at the start

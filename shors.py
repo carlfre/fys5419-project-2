@@ -1,13 +1,10 @@
 from math import ceil
 from random import randint
 from fractions import Fraction
-
-import numpy as np
-
 from number_theory import  gcd
 from phase_estimation import phase_estimation
 from gates import U_mult_a, multi_kron
-
+import numpy as np
 
 def find_order_qm(a: int, N: int) -> int:
 
@@ -33,9 +30,6 @@ def find_order_qm(a: int, N: int) -> int:
     phi_frac = Fraction(phi).limit_denominator(N)
     r = phi_frac.denominator
     return r
-
-
-
 
 
 def shors(N: int, max_iterations: int = 1000) -> int: 
