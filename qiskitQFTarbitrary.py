@@ -1,116 +1,109 @@
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
-from qiskit import transpile
+from qiskit.result import Result
+from qiskit.exceptions import QiskitError
+from qiskit.quantum_info import Statevector  
+from qiskit.circuit.library import QFT
 import numpy as np
-from math import gcd
-from fractions import Fraction
+import cmath
 
-def shors_algorithm(N, a):
-    """
-    Implements Shor's algorithm to factorize number N using base a.
-    Returns one non-trivial factor of N or None if failed.
-    """
-    # Step 1: Check if N is even
-    if N % 2 == 0:
-        return 2
-    
-    # Step 2: Check if N is a power
-    for i in range(2, int(np.log2(N)) + 1):
-        x = round(N ** (1/i))
-        if x ** i == N:
-            return x
-    
-    # Step 3: Quantum period finding
-    n = int(np.ceil(np.log2(N)))  # Number of qubits for modular exponentiation
-    m = n * 2  # Number of qubits for counting
-    
-    # Initialize quantum and classical registers
-    qr_count = QuantumRegister(m, 'count')
-    qr_aux = QuantumRegister(n, 'aux')
-    cr = ClassicalRegister(m, 'meas')
-    circuit = QuantumCircuit(qr_count, qr_aux, cr)
-    
-    # Apply Hadamard gates to counting qubits
-    for q in range(m):
-        circuit.h(qr_count[q])
-    
-    # Apply modular exponentiation (simplified for N=15)
-    circuit.x(qr_aux[0])  # Initialize auxiliary register to |1>
-    
-    # Controlled modular multiplication
-    for q in range(m):
-        circuit.append(
-            c_amodN(a, 2**q, N, n),
-            [qr_count[q]] + list(qr_aux)
+
+def run_and_get_statevector(circuit: QuantumCircuit) -> Result:
+    """Simulates the circuit and returns the result."""
+    simulator = AerSimulator(method='statevector')
+    # Add save_statevector to the circuit
+    circuit.save_statevector()
+    job = simulator.run(circuit, shots=1)  # shots=1 to get a single statevector
+    result = job.result()
+    return result
+
+def print_formatted_statevector(statevector: Statevector, num_qubits: int):
+    """Prints the statevector in the desired format."""
+
+    for i in range(2**num_qubits):
+        binary_state = bin(i)[2:].zfill(num_qubits)  # Binary representation
+        amplitude = statevector[i]  # Access amplitude using Statevector indexing
+        probability = np.abs(amplitude) ** 2
+        phase = cmath.phase(amplitude)
+
+        print(
+            f"|{binary_state}> ({i}): ampl: {amplitude:.4f} prob: {probability:.4f} Phase: {phase:.2f}"
         )
-    
-    # Apply inverse QFT
-    circuit.append(qft_dagger(m), qr_count)
-    
-    # Measure counting register
-    circuit.measure(qr_count, cr)
-    
-    # Transpile the circuit for the backend
-    backend = AerSimulator()
-    circuit = transpile(circuit, backend=backend)
-    
-    # Run simulation
-    result = backend.run(circuit, shots=100).result()
-    counts = result.get_counts()
-    
-    # Step 4: Classical post-processing
-    for measured_value in counts:
-        measured_int = int(measured_value, 2)
-        if measured_int == 0:
-            continue
-        # Convert to phase
-        phase = measured_int / (2**m)
-        # Continued fraction to find r
-        frac = Fraction(phase).limit_denominator(N)
-        r = frac.denominator
-        
-        # Step 5: Check if r is the period
-        if r % 2 == 0 and (pow(a, r//2, N) != N-1):
-            factor1 = gcd(pow(a, r//2, N) - 1, N)
-            factor2 = gcd(pow(a, r//2, N) + 1, N)
-            if 1 < factor1 < N:
-                return factor1
-            if 1 < factor2 < N:
-                return factor2
-    
-    return None
 
-def c_amodN(a, power, N, n):
-    """
-    Controlled multiplication by a^power mod N gate for N=15.
-    Returns a controlled gate for modular exponentiation.
-    """
-    # For N=15, we simplify by precomputing a^power mod 15
-    U = QuantumCircuit(n)
-    result = pow(a, power, N)  # Compute a^power mod N classically
-    # Apply X gates to represent the result in binary
-    for q in range(n):
-        if result & (1 << q):
-            U.x(q)
-    # Convert to controlled gate
-    return U.to_gate(name=f'cmod_{a}^{power}%{N}').control(1)
 
-def qft_dagger(n):
-    """
-    Inverse Quantum Fourier Transform for n qubits.
-    """
-    qc = QuantumCircuit(n)
-    for qubit in range(n//2):
-        qc.swap(qubit, n-qubit-1)
+# Generalized QFT
+def qft_nq(n):
+    qc = QuantumCircuit(n, name=f'QFT_{n}')
     for j in range(n):
-        for m in range(j):
-            qc.cp(-np.pi/float(2**(j-m)), m, j)
-        qc.h(j)
-    return qc.to_gate(name='qft_dagger')
+        qc.h(j)  # Hadamard on qubit j
+        for k in range(j + 1, n):
+            angle = np.pi / (2 ** (k - j))  # Phase for R_{k-j}
+            qc.cp(angle, j, k)
+    # Reverse the order with swaps
+    for j in range(n // 2):
+        qc.swap(j, n - 1 - j)
+    return qc
 
-# Example usage
-if __name__ == "__main__":
-    N = 15  # Number to factorize
-    a = 7   # Random number coprime with N
-    factor = shors_algorithm(N, a)
-    print(f"Found factor: {factor}")
+
+# Generalized Inverse QFT
+def iqft_nq(n):
+    qc = QuantumCircuit(n, name=f'IQFT_{n}')
+    # Reverse the swaps
+    for j in range(n // 2):
+        qc.swap(j, n - 1 - j)
+    # Apply gates in reverse order with conjugate phases
+    for j in range(n - 1, -1, -1):
+        for k in range(n - 1, j, -1):
+            angle = -np.pi / (2 ** (k - j))  # Negative phase for inverse
+            qc.cp(angle, j, k)
+        qc.h(j)  # Hadamard on qubit j
+    return qc
+
+def create_qft_circuits_dict(n):
+    circuits = {
+        f"qc_qft_{n}":  (QFT(num_qubits = n, do_swaps=True, inverse=False), f"{n}-Qubit QFT", n),
+        f"qc_iqft_{n}": (QFT(num_qubits = n, do_swaps=True, inverse=True), f"{n}-Qubit IQFT", n)
+    }
+    return circuits
+
+if __name__ == '__main__':
+    # Test for n = 4 as an example
+    n = 4
+    qc_qft = qft_nq(n)
+    qc_iqft = iqft_nq(n)
+
+    names = [f"{n}-Qubit QFT", f"{n}-Qubit IQFT"]
+    listqftandiqft = [qc_qft,qc_iqft]
+    numqubits = [n,n]
+
+    for i, j, k in zip(names, listqftandiqft, numqubits):
+        print(i)          # Use the dictionary value (e.g., "1-Qubit QFT")
+        print(j)          # Prints the key (e.g., qc_qft_1 object)
+        print("Statevector:")
+        try:
+            result = run_and_get_statevector(j)
+            statevector = result.get_statevector()
+            print_formatted_statevector(statevector, k)
+            print()
+        except QiskitError as e:
+            print(f"  Error: {e}")
+
+
+#----------Qiskit's inbuilt QFT and IQFT-----------#
+    # Create circuits
+    circuits_dict = create_qft_circuits_dict(n)
+
+    # Loop with decomposition
+    for name, (circuit, label, j) in circuits_dict.items():
+        print(f"{label}:")
+        print("Statevector:")
+        try:
+            # Decompose the QFT circuit into basic gates
+            decomposed_circuit = circuit.decompose()
+            result = run_and_get_statevector(decomposed_circuit)
+            statevector = result.get_statevector()
+            print_formatted_statevector(statevector, j)
+            print()
+        except QiskitError as e:
+            print(f"  Error: {e}")
+    
