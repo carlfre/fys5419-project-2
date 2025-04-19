@@ -4,8 +4,10 @@ from qiskit.circuit import Gate
 from qiskit.quantum_info import Statevector
 from qiskit.circuit.library import PhaseEstimation, UnitaryGate
 from scipy.linalg import expm, eigh # Use eigh for Hermitian matrices
+from vqe.vqe import VQE
 import numpy as np
 import cmath
+
 
 
 def run_and_get_counts(circuit: QuantumCircuit, shots=1024) -> dict:
@@ -124,7 +126,7 @@ def calculate_and_adjust_energy(estimated_phase: float, t: float) -> float:
 if __name__ == "__main__":
 
     t = 1.0  # Evolution time
-    shots = 1000 # Number of simulation shots
+    shots = 10000 # Number of simulation shots
 
     # H_2x2
     #H11, H12, H22 = 1.0, 0.5, -1.0
@@ -182,6 +184,7 @@ if __name__ == "__main__":
     print("\n--- QPE for H_2x2 (All Eigenvalues) ---")
     num_counting_2x2 = 8 # Number of counting qubits
     num_target_2x2 = H_2x2.shape # Should be 2
+    qpe_energies_2x2 = []
 
     for i in range(num_target_2x2[0]):
         target_eigenvalue_index_2x2 = i
@@ -209,6 +212,7 @@ if __name__ == "__main__":
         # Estimate Phase and Energy
         estimated_phase_2x2 = estimate_phase_from_counts_arbitrary(counts_2x2, num_counting_2x2)
         estimated_energy_2x2 = calculate_and_adjust_energy(estimated_phase_2x2, t)
+        qpe_energies_2x2.append(estimated_energy_2x2)
 
         print(f"Estimated Phase: {estimated_phase_2x2:.5f} radians")
         print(f"Estimated Energy: {estimated_energy_2x2:.5f}")
@@ -220,6 +224,7 @@ if __name__ == "__main__":
     print("\n--- QPE for H_4x4 (All Eigenvalues) ---")
     num_counting_4x4 = 8 # More qubits for potentially better precision
     num_target_4x4 = H_4x4.shape # Should be 4
+    qpe_energies_4x4 = []
 
     for i in range(num_target_4x4[0]):
         target_eigenvalue_index_4x4 = i
@@ -247,8 +252,79 @@ if __name__ == "__main__":
         # Estimate Phase and Energy
         estimated_phase_4x4 = estimate_phase_from_counts_arbitrary(counts_4x4, num_counting_4x4)
         estimated_energy_4x4 = calculate_and_adjust_energy(estimated_phase_4x4, t)
+        qpe_energies_4x4.append(estimated_energy_4x4)
 
         print(f"Estimated Phase: {estimated_phase_4x4:.5f} radians")
         print(f"Estimated Energy: {estimated_energy_4x4:.5f}")
         print(f"Exact Energy:     {exact_eigenvalue_4x4:.5f}")
         print(f"Absolute Error:   {abs(estimated_energy_4x4 - exact_eigenvalue_4x4):.5f}")
+
+
+
+        # === VQE Calculations ===
+    print("\n" + "="*30)
+    print(" VQE Ground State Calculations")
+    print("="*30)
+
+    # --- VQE for H_2x2 ---
+    print("\n--- VQE for H_2x2 ---")
+    vqe_energy_2x2 = None # Initialize in case of error
+    try:
+        # Assuming VQE class and methods are defined earlier in your script
+        # The vqe_for_2x2_hamiltonian uses shot-based estimation internally
+        shots_vqe_2x2 = 10000 # Match the default in the function or set as desired
+        print(f"Running VQE with {shots_vqe_2x2} shots per expectation value...")
+        # Make sure the VQE class and its dependencies (gates, ansatz) are defined
+        vqe_energy_2x2 = VQE.vqe_for_2x2_hamiltonian(H_2x2, n_shots=shots_vqe_2x2)
+        exact_gs_energy_2x2 = eigvals_2x2[0] # Ground state is the first eigenvalue
+        print(f"VQE Estimated Ground State Energy (H_2x2): {vqe_energy_2x2:.5f}")
+        print(f"Exact Ground State Energy (H_2x2):         {exact_gs_energy_2x2:.5f}")
+        print(f"Absolute Error (VQE H_2x2):                {abs(vqe_energy_2x2 - exact_gs_energy_2x2):.5f}")
+    except NameError as ne:
+        print(f"VQE class or related function not found. Skipping VQE for H_2x2. Error: {ne}")
+    except ImportError as ie:
+         print(f"Could not import VQE dependencies (.gatesvqe,.ansatzes?). Skipping VQE for H_2x2. Error: {ie}")
+    except Exception as e:
+        print(f"An error occurred during VQE for H_2x2: {e}")
+
+
+    # --- VQE for H_4x4 ---
+    print("\n--- VQE for H_4x4 ---")
+    vqe_energy_4x4 = None # Initialize in case of error
+    try:
+        # Assuming VQE class and methods are defined earlier
+        # Note: Your provided vqe_for_4x4_hamiltonian uses exact statevector expectation values
+        shots_vqe_4x4 = 10000 # Match the default in the function or set as desired
+        print("Running VQE using exact statevector expectation values...")
+        # Make sure the VQE class and its dependencies (gates, ansatz) are defined
+        vqe_energy_4x4 = VQE.vqe_for_4x4_hamiltonian(H_4x4, n_shots=shots_vqe_4x4)
+        exact_gs_energy_4x4 = eigvals_4x4[0] # Ground state is the first eigenvalue
+        print(f"VQE Estimated Ground State Energy (H_4x4): {vqe_energy_4x4:.5f}")
+        print(f"Exact Ground State Energy (H_4x4):         {exact_gs_energy_4x4:.5f}")
+        print(f"Absolute Error (VQE H_4x4):                {abs(vqe_energy_4x4 - exact_gs_energy_4x4):.5f}")
+    except NameError as ne:
+        print(f"VQE class or related function not found. Skipping VQE for H_4x4. Error: {ne}")
+    except ImportError as ie:
+         print(f"Could not import VQE dependencies (.gatesvqe,.ansatzes?). Skipping VQE for H_4x4. Error: {ie}")
+    except Exception as e:
+        print(f"An error occurred during VQE for H_4x4: {e}")
+
+
+    # --- Comparison Summary ---
+    print("\n" + "="*55)
+    print(" Ground State Energy Comparison Summary")
+    print("="*55)
+    print(f"{'Hamiltonian':<12} | {'Exact':<10} | {'QPE (Est.)':<12} | {'VQE (Est.)':<12}")
+    print(f"{'-'*12}-+-{'-'*10}-+-{'-'*12}-+-{'-'*12}")
+
+    # H_2x2 Summary
+    # Check if QPE results list is not empty before accessing index 0
+    qpe_gs_2x2_str = f"{qpe_energies_2x2[0]:.5f}" if qpe_energies_2x2 else "N/A"
+    vqe_gs_2x2_str = f"{vqe_energy_2x2:.5f}" if vqe_energy_2x2 is not None else "N/A"
+    print(f"{'H_2x2':<12} | {exact_gs_energy_2x2:<10.5f} | {qpe_gs_2x2_str:<12} | {vqe_gs_2x2_str:<12}")
+
+    # H_4x4 Summary
+    # Check if QPE results list is not empty before accessing index 0
+    qpe_gs_4x4_str = f"{qpe_energies_4x4[0]:.5f}" if qpe_energies_4x4 else "N/A"
+    vqe_gs_4x4_str = f"{vqe_energy_4x4:.5f}" if vqe_energy_4x4 is not None else "N/A"
+    print(f"{'H_4x4':<12} | {exact_gs_energy_4x4:<10.5f} | {qpe_gs_4x4_str:<12} | {vqe_gs_4x4_str:<12}")
