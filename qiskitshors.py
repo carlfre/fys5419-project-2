@@ -412,6 +412,7 @@ def factor_shor(N, max_attempts=5):
     print(f"\nFailed to find factors after {max_attempts} attempts.")
     return None
 
+
 # --- Example Usage ---
 if __name__ == "__main__":
     # Test 
@@ -422,3 +423,5 @@ if __name__ == "__main__":
     else:
         print(f"\nCould not factor {N} with the given attempts.")
 
+
+    

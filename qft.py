@@ -49,7 +49,7 @@ if __name__ == "__main__":
     from linear_algebra import quantum_fourier_transform
 
 
-    N = 3
+    N = 2
     QFT = qft(N)
 
 

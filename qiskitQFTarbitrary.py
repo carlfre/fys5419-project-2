@@ -30,6 +30,35 @@ def print_formatted_statevector(statevector: Statevector, num_qubits: int):
             f"|{binary_state}> ({i}): ampl: {amplitude:.4f} prob: {probability:.4f} Phase: {phase:.2f}"
         )
 
+def check_unitarity(circuit: QuantumCircuit, tol=1e-10) -> bool:
+    """Checks if the circuit's unitary matrix satisfies U†U = I."""
+    # Create a copy of the circuit to avoid modifying the original
+    circuit_copy = circuit.copy()
+    simulator = AerSimulator(method='unitary')
+    # Add save_unitary to the copied circuit
+    circuit_copy.save_unitary()
+    job = simulator.run(circuit_copy)
+    result = job.result()
+    try:
+        unitary = result.get_unitary()
+        # Convert Operator to NumPy array to avoid deprecation warning
+        unitary_array = np.asarray(unitary)
+        # Compute conjugate transpose (dagger)
+        unitary_dagger = unitary_array.conj().T
+        # Compute product U†U
+        product = np.dot(unitary_dagger, unitary_array)
+        # Check if product is close to identity
+        identity = np.eye(2**circuit.num_qubits)
+        if np.linalg.norm(product - identity) < tol:
+            print("Good, the matrix is unitary!")
+        elif np.linalg.norm(product - identity) > tol:
+            print("Not Good, the matrix is not unitary!")
+        elif np.linalg.norm(product - identity) == tol:
+            print("The matrix is straight on unitary tolerence!")
+        return 
+    except QiskitError as e:
+        print(f"Unitarity check error: {e}")
+        return False
 
 # Generalized QFT
 def qft_nq(n):
@@ -68,7 +97,7 @@ def create_qft_circuits_dict(n):
 
 if __name__ == '__main__':
     # Test for n = 4 as an example
-    n = 4
+    n = 6
     qc_qft = qft_nq(n)
     qc_iqft = iqft_nq(n)
 
@@ -79,6 +108,8 @@ if __name__ == '__main__':
     for i, j, k in zip(names, listqftandiqft, numqubits):
         print(i)          # Use the dictionary value (e.g., "1-Qubit QFT")
         print(j)          # Prints the key (e.g., qc_qft_1 object)
+        # Check unitarity
+        is_unitary = check_unitarity(j)
         print("Statevector:")
         try:
             result = run_and_get_statevector(j)
