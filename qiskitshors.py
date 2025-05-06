@@ -3,6 +3,7 @@ import random
 from fractions import Fraction
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 from qiskit import QuantumCircuit, transpile
 from qiskit.providers.basic_provider import BasicSimulator # Basic simulator
 from qiskit_aer import AerSimulator
@@ -416,10 +417,12 @@ def factor_shor(N, max_attempts=5):
 # --- Example Usage ---
 if __name__ == "__main__":
     # Test 
-    N=21
+    N=15
+    start = time.time()
     factors = factor_shor(N, max_attempts=10) # Increase attempts if needed
+    end = time.time()
     if factors:
-        print(f"\nSuccessfully factored {N} into: {factors}")
+        print(f"\nSuccessfully factored {N} into: {factors} in {end - start:.8f} seconds.")
     else:
         print(f"\nCould not factor {N} with the given attempts.")
 

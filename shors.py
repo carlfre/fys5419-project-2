@@ -5,6 +5,7 @@ from number_theory import  gcd
 from phase_estimation import phase_estimation
 from gates import U_mult_a, multi_kron
 import numpy as np
+import time
 
 def find_order_qm(a: int, N: int) -> int:
 
@@ -52,11 +53,14 @@ def shors(N: int, max_iterations: int = 1000) -> int:
                 return gcd2
             
     raise ValueError("Failed to find non-trivial factors of N within the set iterations.")
-            
 
 
-print(shors(6))
+N = 6
+start = time.time()
+factor = shors(N)
+end = time.time()
 
+print(f"\nSuccessfully factored {N} into: {factor, int(N/factor)} in {end - start:.8f} seconds.")
 
 # r = 1
 # while r % 2 != 0:
