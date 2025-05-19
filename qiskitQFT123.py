@@ -27,7 +27,7 @@ def print_formatted_statevector(statevector: Statevector, num_qubits: int):
         phase = cmath.phase(amplitude)
 
         print(
-            f"|{binary_state}> ({i}): ampl: {amplitude:.4f} prob: {probability:.4f} Phase: {phase:.2f}"
+            f"|{binary_state}> ({i}): ampl: {amplitude:.8f} prob: {probability:.4f} Phase: {phase:.2f}"
         )
 
 

@@ -153,6 +153,18 @@ def phase_estimation_old(U: np.ndarray, u: np.ndarray, t: int) -> str:
     binary = np.binary_repr(num, width = t )
     return "0." + binary
 
+def binary_to_phase(binary: str, num_counting_qubits: int) -> float:
+    """Converts a binary fraction string to a phase in radians."""
+    if not binary.startswith("0."):
+        raise ValueError("Binary string must start with '0.'")
+    
+    binary_part = binary[2:]
+    if len(binary_part) != num_counting_qubits:
+        raise ValueError(f"Binary string length must match num_counting_qubits ({num_counting_qubits})")
+    
+    b = int(binary_part, 2)
+    phase = 2 * np.pi * b / (2 ** num_counting_qubits)
+    return phase
 
 if __name__ == "__main__":
     # https://en.wikipedia.org/wiki/Binary_number
@@ -163,8 +175,12 @@ if __name__ == "__main__":
 
     from time import time
     start = time()
-    phase = phase_estimation_new(U, u, t)
-    print(phase, "time", time() - start)
+    # phase = phase_estimation_new(U, u, t)
+    phase_binary = phase_estimation_new(U, u, t)
+    print(f"Estimated Phase (binary fraction): {phase_binary}")
+    phase_radians = binary_to_phase(phase_binary, t)
+    print(f"Estimated Phase (radians): {phase_radians}")
+    print("time", time() - start)
     # start = time()
     # phase = phase_estimation_old(U, u, t)
     # print(phase, "time", time() - start)

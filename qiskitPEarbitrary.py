@@ -42,7 +42,7 @@ def print_formatted_statevector(statevector: Statevector, total_qubits: int):
 def get_u(theta):
     """Returns a sample unitary gate."""
     qc = QuantumCircuit(1, name="U")
-    qc.rz(theta, 0)
+    qc.p(theta, 0)
     return qc.to_gate(label="U")
 
 
@@ -123,11 +123,27 @@ def estimate_phase_from_counts_arbitrary(counts: dict, num_counting_qubits: int)
 
     return estimated_phase_theta
 
+def estimate_phase_to_binary(counts: dict, num_counting_qubits: int) -> str:
+    """Converts measurement counts to a binary fraction string like phase_estimation.py."""
+    total_shots = sum(counts.values())
+    if total_shots == 0:
+        return "0." + "0" * num_counting_qubits
+
+    # Find the state with the highest count
+    max_state = max(counts, key=counts.get)
+    # Reverse the state string (Qiskit's qubit ordering)
+    reversed_state = max_state[::-1]
+    # Convert to integer
+    k = int(reversed_state, 2)
+    # Format as binary string with leading "0."
+    binary = np.binary_repr(k, width=num_counting_qubits)
+    return "0." + binary
+
 
 if __name__ == "__main__":
  
-    actual_theta = np.pi / 4  # Target phase to estimate
-    rz_param = 2 * actual_theta # Since Rz(lambda)|1> = exp(i*lambda/2)|1>, we need lambda = 2 * actual_theta as rz_param
+    actual_theta = np.pi / 2  # Target phase to estimate (this must be the same as input in U1 for phase_estimation)
+    rz_param = actual_theta # Since Rz(lambda)|1> = exp(i*lambda/2)|1>, we need lambda = 2 * actual_theta as rz_param
     U = get_u(rz_param) # Create the unitary gate
     actual_phi = actual_theta / (2 * np.pi) # Calculate the fractional phase for reference
     qubit_counts = [1,2,3,4]  # Test multiple counting qubit counts
@@ -153,8 +169,12 @@ if __name__ == "__main__":
         print_formatted_statevector(statevector, total_qubits) 
 
         # --- Counts Simulation ---
-        counts = run_and_get_counts(qc_pe, shots=1000) # Use the circuit with measurements
+        counts = run_and_get_counts(qc_pe, shots=10000) # Use the circuit with measurements
         print(f"\n{num_counting_qubits}-Counting Qubit Measurement Counts:", counts)
+
+        # Binary Fraction Output (to match phase_estimation.py)
+        binary_phase = estimate_phase_to_binary(counts, num_counting_qubits)
+        print(f"Estimated Phase (binary fraction, {num_counting_qubits}-counting qubit): {binary_phase}")
 
         # --- Phase Estimation ---
         estimated_phase = estimate_phase_from_counts_arbitrary(counts, num_counting_qubits)
@@ -188,6 +208,10 @@ if __name__ == "__main__":
         # --- Counts Simulation (Qiskit) ---
         counts_qiskit = run_and_get_counts(qc_pe_qiskit, shots=1000) # Use circuit with measurements
         print(f"\n{num_counting_qubits}-Counting Qubit Measurement Counts (Qiskit):", counts_qiskit)
+
+        # Binary Fraction Output (to match phase_estimation.py)
+        binary_phase_qiskit = estimate_phase_to_binary(counts_qiskit, num_counting_qubits)
+        print(f"Estimated Phase (binary fraction, {num_counting_qubits}-counting qubit, Qiskit): {binary_phase_qiskit}")
 
         # --- Phase Estimation (Qiskit) ---
         estimated_phase_qiskit = estimate_phase_from_counts_arbitrary(counts_qiskit, num_counting_qubits)

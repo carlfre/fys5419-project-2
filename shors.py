@@ -5,6 +5,7 @@ from number_theory import  gcd
 from phase_estimation import phase_estimation_old, phase_estimation_new
 from gates import U_mult_a, multi_kron
 import numpy as np
+import time
 
 def find_order_qm(a: int, N: int) -> int:
 
@@ -62,7 +63,6 @@ def shors(N: int, max_iterations: int = 1000) -> int:
                 return gcd2
             
     raise ValueError("Failed to find non-trivial factors of N within the set iterations.")
-            
 
 
 
@@ -138,6 +138,7 @@ def compare_qm_classical():
 
 # main()
 
+print(f"\nSuccessfully factored {N} into: {factor, int(N/factor)} in {end - start:.8f} seconds.")
 
 # r = 1
 # while r % 2 != 0:
@@ -165,4 +166,4 @@ def compare_qm_classical():
 #     raise ValueError("Failed to find non-trivial factors of N.")
 
 if __name__ == "__main__":
-    plot_estimated_order_distribution(15, 8, n_runs=200)
+    pass
