@@ -31,7 +31,7 @@ def mat_pow(U: sp.spmatrix, n: int) -> sp.spmatrix:
         return half @ half @ U
     
 
-def phase_estimation_new(U: sp.spmatrix, u: np.ndarray, t: int) -> sp.spmatrix:
+def phase_estimation_new(U: sp.spmatrix, u: np.ndarray, t: int, n_shots: int) -> sp.spmatrix:
     I = identity(2)
     H = hadamard()
     
@@ -92,13 +92,13 @@ def phase_estimation_new(U: sp.spmatrix, u: np.ndarray, t: int) -> sp.spmatrix:
 
     # cum_prob = np.cumsum(probability_vector)
     # uniform = np.random.uniform()
-    num = np.random.choice(np.arange(probability_vector.shape[0]), p=probability_vector)
+    samples = np.random.choice(np.arange(probability_vector.shape[0]), p=probability_vector, size=n_shots, replace=True)
 
     # num = np.argmax(np.abs(probability_vector))
 
-    binary = np.binary_repr(num, width = t )
+    binary_representations = ["0." + np.binary_repr(num, width = t) for num in samples]
     print("phase estimation DONE.!")
-    return "0." + binary
+    return binary_representations
 
 
 
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     from time import time
     start = time()
     # phase = phase_estimation_new(U, u, t)
-    phase_binary = phase_estimation_new(U, u, t)
+    phase_binary = phase_estimation_new(U, u, t, n_shots=1)[0]
     print(f"Estimated Phase (binary fraction): {phase_binary}")
     phase_radians = binary_to_phase(phase_binary, t)
     print(f"Estimated Phase (radians): {phase_radians}")
