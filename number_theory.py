@@ -17,18 +17,26 @@ def gcd(n: int, m: int) -> int:
         raise ValueError("gcd() only accepts non-negative integers")
 
     m, n = max(n, m), min(n, m)
+    if n == 0:
+        return m
     if m % n == 0:
         return n
     return gcd(n, m % n)
 
 
 def find_order_classical(a: int, N: int):
+    
+
+    if gcd(a, N) != 1:
+        raise ValueError(f"a must be coprime to N. a: {a}, N: {N}")
+
+    
     r = 1
     apow = a % N
     while apow != 1:
         apow = (apow * a) % N
         r += 1
-        # print(apow, r)
+        print(apow, r)
     return r
 
 
@@ -51,3 +59,25 @@ def factorize_classical(N: int, max_iterations: int = 1000) -> int:
             
     raise ValueError("Failed to find non-trivial factors of N within the set iterations.")
 
+def is_prime(n: int) -> bool:
+    """Checks if a number is prime.
+    
+    n is assumed to be a positive integer."""
+
+    if n < 0:
+        raise ValueError("is_prime() only accepts non-negative integers")
+
+    if n < 2:
+        return False
+    
+    for i in range(2, int(n**0.5) + 1):
+        if n%i == 0:
+            return False
+    return True
+
+
+
+if __name__ == "__main__":
+    # for i in range(2, 50):
+    #     print(f"{i}: {is_prime(i)}")
+    print(find_order_classical(8, 15))
