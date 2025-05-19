@@ -132,7 +132,6 @@ def U_mult_a(a: int, N: int, n_qubits: int) -> sp.spmatrix:
     
     # Handle multiplication modulo N
     for k in range(N):
-        print("k, mod:", k, (a*k) % N)
         rows.append((a*k) % N)
         cols.append(k)
         data.append(1)

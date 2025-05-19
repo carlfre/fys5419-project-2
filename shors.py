@@ -15,7 +15,6 @@ def phi_bin_to_order(phi_bin: str, N: int) -> int:
     for i, digit in enumerate(phi_bin[2:]):
         phi += int(digit) * 2**(-(i+1))
 
-    print("phi", phi)
     phi_frac = Fraction(phi).limit_denominator(N)
     return phi_frac.denominator
 
@@ -28,10 +27,7 @@ def find_order_qm(a: int, N: int, n_shots: int) -> int:
     L = ceil(np.log2(N))
 
     t = 4 * L + 2
-    print("L, t", L, t)
     Ua = U_mult_a(a, N, L)
-    print("Ua")
-    print(Ua)
 
 
     ket0 = np.array([1, 0])
@@ -40,8 +36,6 @@ def find_order_qm(a: int, N: int, n_shots: int) -> int:
     kets = (L-1) * [ket0] + [ket1]
     # kets = [ket1] + (L - 1) * [ket0]
     u = multi_kron(*kets, type='numpy')
-    print("u")
-    print(u)
 
     phi_binary_representations = phase_estimation_new(Ua, u, t, n_shots)
     r_estimates = [phi_bin_to_order(phi_bin, N) for phi_bin in phi_binary_representations]
@@ -76,10 +70,7 @@ def estimated_order_distribution(N: int, a: int, n_shots: int) -> Counter:
     """
     Compute the distribution of estimated orders for a given number of runs.
     """
-    # orders = []
-    # for _ in range(n_runs):
-    #     r = find_order_qm(a, N)
-    #     orders.append(r)
+
     orders = find_order_qm(a, N, n_shots=n_shots)
 
     order_counts = Counter(orders)
@@ -166,5 +157,10 @@ def compare_qm_classical():
 #     raise ValueError("Failed to find non-trivial factors of N.")
 
 if __name__ == "__main__":
-    order_dist = estimated_order_distribution(21, 10, 1000)
-    print(order_dist)
+    n_shots = 10_000
+    N = 15
+    for a in range(2, N):
+        if gcd(a, N) != 1:
+            continue
+        order_dist = estimated_order_distribution(N, a, n_shots)
+        print(order_dist)

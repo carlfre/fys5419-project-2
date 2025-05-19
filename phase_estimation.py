@@ -31,58 +31,38 @@ def mat_pow(U: sp.spmatrix, n: int) -> sp.spmatrix:
         return half @ half @ U
     
 
-def phase_estimation_new(U: sp.spmatrix, u: np.ndarray, t: int, n_shots: int) -> sp.spmatrix:
+def phase_estimation_new(U: sp.spmatrix, u: np.ndarray, t: int, n_shots: int, display_progress: bool = False) -> sp.spmatrix:
     I = identity(2)
     H = hadamard()
     
 
     n = round(np.log2(U.shape[0]))
-    n_qubits_tot = t + n
 
     ket0 = np.array([1, 0])
     ket0_tensor = multi_kron(*([ket0] * t), type='numpy')
     psi = np.kron(ket0_tensor, u)
 
 
-    # print("t", t)
 
     for i in range(t):
-        print(f"applying H: {i} of {t}")
+        if display_progress:
+            print(f"applying H: {i} of {t}")
         psi = apply_operator(psi, H, i)
-        # Hi = multi_qubit_gate(H, i, n_qubits_tot)
-        # psi = Hi @ psi
-    
-    # print("done w H")
     Upow = U
     for i in range(t):
-        print(f"applying U^({2**i}). {i} of {t}")
-        # print("computing Upow")
-        # Upow = mat_pow(U, 2**i)
-        # print(i, "applying controlled U")
+        if display_progress:
+            print(f"applying U^({2**i}). {i} of {t}")
         psi = apply_controlled_operator(psi, Upow, t-i-1)
         Upow = Upow @ Upow
-    # print("done W CU")
     psi = psi.reshape((2**t, -1))
 
-    # print("reshaped. Now doing iQFT")
-
-
     start_time = time()
-    # This implementation maybe faster but uses more memory.
-    # results = Parallel(n_jobs=-1)(
-    #     delayed(inverse_qft)(psi[:, i]) for i in range(psi.shape[1])
-    # )
-    # for i, res in enumerate(results):
-    #     psi[:, i] = res
-
-    # This implementation uses less memory but is slower.
     for i in range(2**n):
-        print(f"applying iQFT {i} of {2**n}")
+        if display_progress:
+            print(f"applying iQFT {i} of {2**n}")
         psi[:, i] = inverse_qft(psi[:, i])
-    print("iQFT time", time() - start_time)
-    
-    # print("done w iQFT")
-
+    if display_progress:
+        print("iQFT time", time() - start_time)
 
     
     probability_vector = np.abs(psi)**2
@@ -90,14 +70,11 @@ def phase_estimation_new(U: sp.spmatrix, u: np.ndarray, t: int, n_shots: int) ->
     probability_vector = probability_vector.reshape((-1, u.shape[0]))
     probability_vector = probability_vector.sum(axis=1)
 
-    # cum_prob = np.cumsum(probability_vector)
-    # uniform = np.random.uniform()
     samples = np.random.choice(np.arange(probability_vector.shape[0]), p=probability_vector, size=n_shots, replace=True)
 
-    # num = np.argmax(np.abs(probability_vector))
-
     binary_representations = ["0." + np.binary_repr(num, width = t) for num in samples]
-    print("phase estimation DONE.!")
+    if display_progress:
+        print("phase estimation DONE.!")
     return binary_representations
 
 

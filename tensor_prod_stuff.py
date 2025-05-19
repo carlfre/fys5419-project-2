@@ -30,7 +30,6 @@ def apply_operator(psi: np.ndarray, operator: np.ndarray | sparse.spmatrix, qubi
     psi = psi.reshape((2**n_qubits_to_the_left, 2**n_qubits_operator, 2**n_qubits_to_the_right))
 
     Upsi = np.einsum('ij,kjl->kil', operator, psi)
-    # print("applying")
     return Upsi.ravel()
 
 
