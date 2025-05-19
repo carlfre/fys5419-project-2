@@ -1,19 +1,8 @@
-from number_theory import gcd, find_order_classical
+from number_theory import gcd, find_order_classical, simplify
 
 import matplotlib.pyplot as plt
 
 from utils import read_csv
-
-def simplify(numerator: int, denominator: int) -> tuple[int, int]:
-    """Simplifies a fraction as much as possible."""
-
-    # if numerator == 0:
-    #     return 0, 1
-    
-    # print(numerator, denominator)
-    gcd_val = gcd(numerator, denominator)
-    return numerator // gcd_val, denominator // gcd_val
-
 
 def freq_to_probabilities(frequencies: dict[int, int]) -> dict[int, float]:
     """Converts frequencies to probabilities."""

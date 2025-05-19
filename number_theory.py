@@ -81,3 +81,14 @@ if __name__ == "__main__":
     # for i in range(2, 50):
     #     print(f"{i}: {is_prime(i)}")
     print(find_order_classical(8, 15))
+
+
+def simplify(numerator: int, denominator: int) -> tuple[int, int]:
+    """Simplifies a fraction as much as possible."""
+
+    # if numerator == 0:
+    #     return 0, 1
+
+    # print(numerator, denominator)
+    gcd_val = gcd(numerator, denominator)
+    return numerator // gcd_val, denominator // gcd_val

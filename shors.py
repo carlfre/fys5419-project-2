@@ -2,7 +2,7 @@ from math import ceil
 import random
 from fractions import Fraction
 from number_theory import  gcd
-from phase_estimation import phase_estimation_old, phase_estimation_new
+from phase_estimation import phase_estimation_old, phase_estimation
 from gates import U_mult_a, multi_kron
 import numpy as np
 import time
@@ -37,7 +37,7 @@ def find_order_qm(a: int, N: int, n_shots: int) -> int:
     # kets = [ket1] + (L - 1) * [ket0]
     u = multi_kron(*kets, type='numpy')
 
-    phi_binary_representations = phase_estimation_new(Ua, u, t, n_shots)
+    phi_binary_representations = phase_estimation(Ua, u, t, n_shots)
     r_estimates = [phi_bin_to_order(phi_bin, N) for phi_bin in phi_binary_representations]
     return r_estimates
 
