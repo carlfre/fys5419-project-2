@@ -1,6 +1,7 @@
 from number_theory import gcd, find_order_classical, simplify
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from utils import read_csv
 
@@ -22,12 +23,12 @@ def expected_estimated_orders(r: int, returns_probabilities: bool = False) -> di
     estimated_orders = {}
 
     for s in range(0, r):
-        _, est_r = simplify(s, r)
+        _, r_prime = simplify(s, r)
 
-        if est_r not in estimated_orders:
-            estimated_orders[est_r] = 0
+        if r_prime not in estimated_orders:
+            estimated_orders[r_prime] = 0
 
-        estimated_orders[est_r] += 1
+        estimated_orders[r_prime] += 1
 
     if returns_probabilities:
         return freq_to_probabilities(estimated_orders)
@@ -35,36 +36,48 @@ def expected_estimated_orders(r: int, returns_probabilities: bool = False) -> di
         return estimated_orders
 
 
-def plot_qm_order_estimates(a: int, N: int, n_shots: int):
+def plot_qm_order_estimates(a: int, N: int, n_shots: int) -> None:
+    """Plots the empirical distribution of the estimated order r', versus the theoretical distribution.
+    
+    Args:
+        a (int): number to compute order of.
+        N (int): number to factorize.
+        n_shots (int): number of samples taken in order finding algorithm.
+
+    Returns:
+        None
+    """
     r = find_order_classical(a, N)
     true_order_to_freq = expected_estimated_orders(r, returns_probabilities=True)
-    true_order_values = list(true_order_to_freq.keys())
-    true_order_frequencies = list(true_order_to_freq.values())
+    true_order_values = np.array(list(true_order_to_freq.keys()))
+    true_order_frequencies = np.array(list(true_order_to_freq.values()))
 
 
     estimated_distribution = read_csv(f"results/estimated_order_distribution_a={a}_N={N}_shots={n_shots}.csv")  
     estimated_distribution = freq_to_probabilities(estimated_distribution)
+    estimated_distribution_keys = np.array(list(estimated_distribution.keys()))
+    estimated_distribution_values = estimated_distribution.values()
+
+    width = 0.4
 
     plt.figure(figsize=(5, 15/4))
 
-    plt.bar(true_order_values, true_order_frequencies, alpha=0.2, color='blue', width=0.5, label='True Distribution')
-    plt.bar(estimated_distribution.keys(), estimated_distribution.values(), alpha=0.2, color='red', width=0.5, label=f'Empirical Distribution')
+    plt.bar(true_order_values - width/2, true_order_frequencies, color='blue', width=0.4, label='Theoretical distribution')
+    plt.bar(estimated_distribution_keys + width/2, estimated_distribution_values, color='red', width=0.4, label=f'Empirical distribution')
 
     plt.xticks(list(range(min(true_order_values), max(true_order_values) + 1)))
-    plt.xlabel('Order')
-    plt.ylabel('Frequency')
-    # plt.title(f'Distribution of Estimated Orders for a={a}, N={N}')
+    plt.xlabel('r\'')
+    plt.ylabel('Relative frequency')
     plt.legend()
     plt.savefig(f'plots/est_order_dist_a={a}_N={N}_shots={n_shots}.pdf')
-    # plt.show()
     plt.close()
     print(f"Plot saved to plots/est_order_dist_a={a}_N={N}_shots={n_shots}.pdf")
 
 
-def verify_orders(N: int, n_shots: int = 10_000):
-    """Verify that the estimated orders match the orders we expect to see, for all a coprime to N.
+def verify_orders(N: int, n_shots: int = 10_000) -> None:
+    """Verify that the estimated orders r' match the orders we expect to see, for all a coprime to N.
      
-    Specifically, if the true order is r, we should see all factors of r, with a certain frequency,
+    Specifically, if the order is r, we should see all factors of r, with a certain frequency,
     which is given by expected_estimated_orders(r).
 
     We check that the empirical distribution matches the expected distribution up to 5% relative error.
@@ -104,9 +117,7 @@ def verify_orders(N: int, n_shots: int = 10_000):
 
 if __name__ == "__main__":
     N = 15
-    a = 7
+    a = 8
     n_shots = 10_000
-    # expected_orders = expected_estimated_orders(, returns_probabilities=True)
-    # print("Expected orders:", expected_orders)
     plot_qm_order_estimates(a, N, n_shots)
     verify_orders(15, n_shots=n_shots)

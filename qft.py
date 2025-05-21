@@ -2,13 +2,23 @@ from time import time
 
 import numpy as np
 
-from gates import CU1, hadamard, multi_qubit_gate, swap
-from tensor_prod_stuff import apply_operator, do_the_swap
-from tensor_prod_stuff import apply_CU1
+from quantum_ops import  apply_operator, hadamard
+from quantum_ops import do_the_swap
+from quantum_ops import apply_CU1
+from linear_algebra import dft
+
 
 
 # TODO: make qft efficient as well. Use ideas from iqft.
 def qft(psi: np.ndarray) -> np.ndarray:
+    """Computes the Quantum Fourier Transform (QFT) of a state vector psi.
+
+    Args:
+        psi (np.ndarray): vector to compute the Fourier transform of.
+
+    Returns:
+        np.ndarray: the fourier transformed vector.
+    """
 
     n_qubits = round(np.log2(psi.shape[0]))
 
@@ -20,15 +30,22 @@ def qft(psi: np.ndarray) -> np.ndarray:
         psi = apply_operator(psi, H, i)
         for j in range(i + 1, n_qubits):
             theta = 2 * np.pi / (2 ** (j - i + 1))
-            U = CU1(theta, j, i, n_qubits)
-            psi = U @ psi
+            psi = apply_CU1(psi, theta, j, i)
 
     for i in range(n_qubits // 2):
-        psi = swap(i, n_qubits - i - 1, n_qubits) @ psi
+        psi = do_the_swap(psi, i, n_qubits - i - 1)
     return psi
 
 
 def inverse_qft(psi: np.ndarray) -> np.ndarray:
+    """Computes the Inverse Quantum Fourier Transform (IQFT) of a state vector psi.
+
+    Args:
+        psi (np.ndarray): vector to compute the inverse Fourier transform of.
+
+    Returns:
+        np.ndarray: the inverse fourier transformed vector.
+    """
 
     n_qubits = round(np.log2(psi.shape[0]))
 
@@ -49,46 +66,18 @@ def inverse_qft(psi: np.ndarray) -> np.ndarray:
     return psi
 
 
+def example_run():
+
+    N = 5
+    psi = np.random.rand(2**N) + 1j * np.random.rand(2**N)
+    psi /= np.linalg.norm(psi) 
+
+    dft_mat = dft(2**N)
+
+    print("Verify that QFT acts the same as DFT matrix:")
+    print("||qft(psi) - dft(psi)|| =", np.linalg.norm(qft(psi.copy()) - dft_mat @ psi.copy()) )
+    print("||inverse_qft(psi) - dft^(-1)(psi)|| =", np.linalg.norm(inverse_qft(psi.copy()) - np.linalg.pinv(dft_mat) @ psi.copy()))
+
+
 if __name__ == "__main__":
-    from linear_algebra import quantum_fourier_transform
-
-    N = 3
-
-    qft_linalg = quantum_fourier_transform(2**N)
-
-    ket0 = np.zeros(2**N, dtype=complex)
-    ket0[7] = 2
-
-    # print("ket0")
-    # print(ket0)
-
-    # print("QFT")
-    ket0_F = qft(ket0)
-    # print(ket0_F)
-
-    # print("QFT old")
-    QFT_mat = qft_old(N)
-    ket0_F_old = qft_linalg @ ket0
-    # print(ket0_F_old)
-
-    # print("Inverse QFT")
-    ket0_F_inv = inverse_qft(ket0_F)
-    # print(ket0_F_inv)
-
-    # print("Inverse QFT old")
-    iQFT_mat = inverse_qft_old(N)
-    ket0_F_inv_old = iQFT_mat @ ket0_F_old
-    # print(ket0_F_inv_old)
-
-    print(np.linalg.norm(ket0_F - ket0_F_old))
-    print(np.linalg.norm(ket0_F_inv - ket0_F_inv_old))
-    print(
-        np.linalg.norm(ket0_F_inv - qft_linalg.conj().T @ ket0)
-    )  # TODO: this turns out nonzero??  what is going on??
-
-    # QFT = qft_old(N)
-
-    # # iQFT = inverse_qft(N)
-
-    # # print(np.linalg.norm(QFT @ iQFT - np.eye(16)))
-    # print(type(QFT))
+    example_run()

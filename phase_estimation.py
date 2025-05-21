@@ -5,22 +5,33 @@ from concurrent.futures import ThreadPoolExecutor
 from joblib import Parallel, delayed
 from time import time
 
-from gates import (
+from qft import inverse_qft
+from quantum_ops import (
     multi_kron,
-    identity,
+    apply_operator,
+    apply_controlled_operator,
     hadamard,
-    controlled_U_gate,
     U1,
-    multi_qubit_gate,
 )
-from qft import qft_old, inverse_qft_old, inverse_qft
-from tensor_prod_stuff import apply_operator, apply_controlled_operator
 
 
 def phase_estimation(
     U: sp.spmatrix, u: np.ndarray, t: int, n_shots: int, display_progress: bool = False
-) -> sp.spmatrix:
-    I = identity(2)
+) -> list[str]:
+    """Phase estimation algorithm.
+
+    For a unitary operator U and an eigenvector u, this algorithm estimates the phase of the corresponding eigenvalue.
+
+    Args:
+        U (sp.spmatrix): Matrix
+        u (np.ndarray): Eigenvector of U
+        t (int): Number of qubits for phase estimation (ie. you only get t bits of precision).
+        n_shots (int): Number of measurements to perform
+        display_progress (bool, optional): If True, prints progress while running. Defaults to False.
+
+    Returns:
+        list[str]: List of binary representations of the estimated phases. Has n_shots elements.
+    """
     H = hadamard()
 
     n = round(np.log2(U.shape[0]))

@@ -2,12 +2,13 @@ from math import ceil
 import random
 from fractions import Fraction
 from number_theory import  gcd
-from phase_estimation import phase_estimation_old, phase_estimation
-from gates import U_mult_a, multi_kron
+from phase_estimation import phase_estimation
+from quantum_ops import U_mult_a, multi_kron
 import numpy as np
 import time
 from collections import Counter
 
+from number_theory import find_order_classical, gcd
 from utils import write_csv
 
 def phi_bin_to_order(phi_bin: str, N: int) -> int:
@@ -87,44 +88,29 @@ def estimated_order_distribution(N: int, a: int, n_shots: int) -> Counter:
 
 
 def compare_qm_classical():
-    from number_theory import find_order_classical, gcd
 
     N = 15
-    a = 4
 
     coprime = []
     clasicals = []
     qms = []
-    for i in range(1, 15):
+    for a in range(1, 15):
 
-        if gcd(i, 15) != 1:
+        if gcd(a, 15) != 1:
             continue
 
-        classical =  find_order_classical(i, N)
-        qm = find_order_qm(i, N)
-        print(i)
+        classical =  find_order_classical(a, N)
+        qm = find_order_qm(a, N)
+        print(a)
         print("classical", classical)
         print("qm", qm)
-        coprime.append(i)
+        coprime.append(a)
         clasicals.append(classical)
         qms.append(qm)
 
     for co, cl, qm in zip(coprime, clasicals, qms):
         print(f"i: {co}, classical: {cl}, qm: {qm}")
 
-
-    # Ua = U_mult_a(a, N, 5)
-    # print("Ua")
-    # print(Ua)
-
-    # Ua_np = Ua.toarray()
-
-    # print(np.allclose(Ua_np.T @ Ua_np, np.eye(2**5)))
-
-    # classical = find_order_classical(a, N)
-    # qm = find_order_qm(a, N)
-    # print("classical", classical)
-    # print("qm", qm)
 
 
 # main()

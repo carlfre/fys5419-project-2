@@ -24,7 +24,8 @@ def gcd(n: int, m: int) -> int:
     return gcd(n, m % n)
 
 
-def find_order_classical(a: int, N: int):
+def find_order_classical(a: int, N: int) -> int:
+    """Classical algorithm for finding the order of a mod N."""
     
 
     if gcd(a, N) != 1:
@@ -40,7 +41,10 @@ def find_order_classical(a: int, N: int):
     return r
 
 
-def factorize_classical(N: int, max_iterations: int = 1000) -> int: 
+def factorize_classical(N: int, max_iterations: int = 1000) -> int:
+    """Classical algorithm for factorizing N, using order finding. 
+    
+    Shor's algorithm is based on this one, but uses a quantum subroutine for finding the order instead."""
 
     for _ in range(max_iterations):
         a = randint(2, N - 1)
@@ -75,20 +79,18 @@ def is_prime(n: int) -> bool:
             return False
     return True
 
+def simplify(numerator: int, denominator: int) -> tuple[int, int]:
+    """Simplifies a fraction as much as possible.
+    
+    eg. 
+    * 4/8 -> 1/2
+    * 6/9 -> 2/3
+    * 0/8 -> 0/1
+    """
+    gcd_val = gcd(numerator, denominator)
+    return numerator // gcd_val, denominator // gcd_val
 
 
 if __name__ == "__main__":
-    # for i in range(2, 50):
-    #     print(f"{i}: {is_prime(i)}")
     print(find_order_classical(8, 15))
 
-
-def simplify(numerator: int, denominator: int) -> tuple[int, int]:
-    """Simplifies a fraction as much as possible."""
-
-    # if numerator == 0:
-    #     return 0, 1
-
-    # print(numerator, denominator)
-    gcd_val = gcd(numerator, denominator)
-    return numerator // gcd_val, denominator // gcd_val

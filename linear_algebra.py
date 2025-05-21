@@ -3,7 +3,8 @@ import numpy as np
 
 
 
-def quantum_fourier_transform(N: int) -> np.ndarray:
+def dft(N: int) -> np.ndarray:
+    """N x N Discrete Fourier Transform matrix."""
     qft = np.zeros((N, N), dtype=complex)
 
     omega = np.exp(2 * np.pi * 1j / N)
@@ -15,6 +16,6 @@ def quantum_fourier_transform(N: int) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    qft = quantum_fourier_transform(4)
+    qft = dft(4)
 
     print(qft)
