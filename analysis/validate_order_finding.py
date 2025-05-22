@@ -3,13 +3,7 @@ from number_theory import gcd, find_order_classical, simplify
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils import read_csv
-
-def freq_to_probabilities(frequencies: dict[int, int]) -> dict[int, float]:
-    """Converts frequencies to probabilities."""
-    total = sum(frequencies.values())
-    return {k: v / total for k, v in frequencies.items()}
-
+from utils import freq_to_probabilities, read_csv
 
 def expected_estimated_orders(r: int, returns_probabilities: bool = False) -> dict[int, int] | dict[int, float]:
     """Given an order r, returns the number of value of s for which we estimate the order to be r_prime.

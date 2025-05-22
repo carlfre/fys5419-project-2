@@ -9,7 +9,6 @@ from linear_algebra import dft
 
 
 
-# TODO: make qft efficient as well. Use ideas from iqft.
 def qft(psi: np.ndarray) -> np.ndarray:
     """Computes the Quantum Fourier Transform (QFT) of a state vector psi.
 

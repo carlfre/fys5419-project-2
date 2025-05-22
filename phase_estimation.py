@@ -1,9 +1,10 @@
+from time import time
+from collections import Counter
+
+
 import numpy as np
 import scipy.sparse as sp
 
-from concurrent.futures import ThreadPoolExecutor
-from joblib import Parallel, delayed
-from time import time
 
 from qft import inverse_qft
 from quantum_ops import (
@@ -13,14 +14,18 @@ from quantum_ops import (
     hadamard,
     U1,
 )
+from utils import sorted_dict
 
 
 def phase_estimation(
     U: sp.spmatrix, u: np.ndarray, t: int, n_shots: int, display_progress: bool = False
-) -> list[str]:
+) -> dict[str, int]:
     """Phase estimation algorithm.
 
-    For a unitary operator U and an eigenvector u, this algorithm estimates the phase of the corresponding eigenvalue.
+    For a unitary operator U and an eigenvector u, this algorithm estimates the phase/(2 pi) of the corresponding eigenvalue.
+
+    Ie. for U |u> = e^(2πi * x) |u>, this algorithm estimates x.
+
 
     Args:
         U (sp.spmatrix): Matrix
@@ -75,7 +80,7 @@ def phase_estimation(
     binary_representations = ["0." + np.binary_repr(num, width=t) for num in samples]
     if display_progress:
         print("phase estimation DONE.!")
-    return binary_representations
+    return sorted_dict(dict(Counter(binary_representations)))
 
 
 def binary_to_phase(binary: str, num_counting_qubits: int) -> float:
@@ -101,18 +106,19 @@ if __name__ == "__main__":
     U = U1(2 * np.pi * ratio)
     u = np.array([0, 1])
 
-    from time import time
 
     start = time()
     # phase = phase_estimation_new(U, u, t)
-    phase_binary = phase_estimation(U, u, t, n_shots=1)[0]
+    phase_binary = phase_estimation(U, u, t, n_shots=1)
+    estimated_phase = max(phase_binary, key=phase_binary.get)
     print(f"Estimated Phase (binary fraction): {phase_binary}")
-    phase_radians = binary_to_phase(phase_binary, t)
-    print(f"Estimated Phase (radians): {phase_radians}")
     print("time", time() - start)
     # start = time()
     # phase = phase_estimation_old(U, u, t)
     # print(phase, "time", time() - start)
+
+
+
 
 
 # print(probability_vector)

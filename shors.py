@@ -1,26 +1,53 @@
 from math import ceil
 import random
 from fractions import Fraction
-from number_theory import  gcd
+from number_theory import gcd
 from phase_estimation import phase_estimation
 from quantum_ops import U_mult_a, multi_kron
 import numpy as np
 import time
 from collections import Counter
+from qiskit_implementations import phase_estimation_qiskit
 
 from number_theory import find_order_classical, gcd
 from utils import write_csv
 
+
 def phi_bin_to_order(phi_bin: str, N: int) -> int:
+    """Converts a binary representation of a phase to an order using continued fractions.
+
+    Args:
+        phi_bin (str): phase in binary representation.
+        N (int): Maximum denominator - the number we are factorizing is a suitable value.
+
+    Returns:
+        int: an estimated order.
+    """
     phi = 0
     for i, digit in enumerate(phi_bin[2:]):
-        phi += int(digit) * 2**(-(i+1))
+        phi += int(digit) * 2 ** (-(i + 1))
 
     phi_frac = Fraction(phi).limit_denominator(N)
     return phi_frac.denominator
 
 
-def find_order_qm(a: int, N: int, n_shots: int) -> int:
+def find_order_qm(
+    a: int, N: int, n_shots: int, use_qiskit: bool = False
+) -> dict[int, int]:
+    """Quantum-mechanical order finding algorithm. Subroutine of Shor's algorithm.
+
+    Finds the smallest integer r such that a^r = 1 mod N.
+
+    Args:
+        a (int): integer to find the order of
+        N (int): Number we are factorizing
+        n_shots (int): number of measurements/estimates to make.
+        use_qiskit (bool, optional): If True, uses Qiskit implementation of phase estimation. Otherwise, uses our implementation.
+
+
+    Returns:
+        dict[int, int]: A dictionary mapping estimated orders to their counts.
+    """
 
     if gcd(a, N) != 1:
         raise ValueError("a must be coprime to N")
@@ -30,61 +57,86 @@ def find_order_qm(a: int, N: int, n_shots: int) -> int:
     t = 4 * L + 2
     Ua = U_mult_a(a, N, L)
 
-
     ket0 = np.array([1, 0])
     ket1 = np.array([0, 1])
-    # kets = L * [ket1]
-    kets = (L-1) * [ket0] + [ket1]
-    # kets = [ket1] + (L - 1) * [ket0]
-    u = multi_kron(*kets, type='numpy')
+    kets = (L - 1) * [ket0] + [ket1]
+    u = multi_kron(*kets, type="numpy")
 
-    phi_binary_representations = phase_estimation(Ua, u, t, n_shots)
-    r_estimates = [phi_bin_to_order(phi_bin, N) for phi_bin in phi_binary_representations]
-    return r_estimates
+    if use_qiskit:
+        phi_binary_representations = phase_estimation_qiskit(Ua, u, t, n_shots)
+        print("out of function")
+    else:
+        phi_binary_representations = phase_estimation(Ua, u, t, n_shots)
+    order_estimates = {}
+    for phi_bin, count in phi_binary_representations.items():
+        order = phi_bin_to_order(phi_bin, N)
+        if order not in order_estimates:
+            order_estimates[order] = 0
+        order_estimates[order] += count
+    return order_estimates
 
 
-def shors(N: int, max_iterations: int = 1000, n_shots_phase_estimation: int=1) -> int: 
+def shors(
+    N: int,
+    max_iterations: int = 1000,
+    n_shots_phase_estimation: int = 1,
+    use_qiskit: bool = False,
+) -> int:
+    """Shor's algorithm for finding a factor of N.
 
+    Args:
+        N (int): Number to factorize.
+        max_iterations (int, optional): Maximum number of iterations. Defaults to 1000.
+        n_shots_phase_estimation (int, optional): Number of measurements to make for each phase estimation. Defaults to 1.
+        use_qiskit (bool, optional): If True, uses Qiskit implementation of phase estimation. Otherwise, uses our implementation
+
+    Returns:
+        int: A factor of N.
+    """
     for _ in range(max_iterations):
         a = random.randint(2, N - 1)
-        print("a", a)
+        print(f"Candidate a={a}")
         if gcd(a, N) > 1:
+            print(
+                f"a={a} and N={N} have a common factor. Trivially return that factor."
+            )
+            print(f"GCD(a, N)={gcd(a, N)}")
             return gcd(a, N)
 
-        r_estimates = find_order_qm(a, N, n_shots=n_shots_phase_estimation)
-        r = max(r_estimates)
-        print("r", r)
-        if r%2 == 0:
-            gcd1 = gcd(a**(r//2) - 1, N)
-            gcd2 = gcd(a**(r//2) + 1, N)
+        r_estimates = find_order_qm(a, N, n_shots_phase_estimation, use_qiskit)
+        r = max(r_estimates.keys())
+        print(f"a={a} has estimated order r={r}.")
+        if r % 2 == 0:
+            print(f"r is even! Proceed to check for factors:")
+            gcd1 = gcd(a ** (r // 2) - 1, N)
+            gcd2 = gcd(a ** (r // 2) + 1, N)
+            print(f"GCD(a^(r/2) - 1, N) = {gcd1}")
+            print(f"GCD(a^(r/2) + 1, N) = {gcd2}")
 
             if gcd1 != 1 and gcd1 != N:
+                print(f"Found non-trivial factor: {gcd1}")
                 return gcd1
             if gcd2 != 1 and gcd2 != N:
+                print(f"Found non-trivial factor: {gcd2}")
                 return gcd2
-            
-    raise ValueError("Failed to find non-trivial factors of N within the set iterations.")
+            print("No non-trivial factors found.")
+
+    raise ValueError(
+        "Failed to find non-trivial factors of N within the set iterations."
+    )
 
 
-
-def estimated_order_distribution(N: int, a: int, n_shots: int) -> Counter:
+def estimated_order_distribution(N: int, a: int, n_shots: int) -> dict[int, int]:
     """
     Compute the distribution of estimated orders for a given number of runs.
     """
 
     orders = find_order_qm(a, N, n_shots=n_shots)
 
-    order_counts = Counter(orders)
-    
     filename = f"results/estimated_order_distribution_a={a}_N={N}_shots={n_shots}.csv"
-    write_csv(order_counts, filename)
+    write_csv(orders, filename)
     print(f"Estimated order distribution saved to {filename}")
-    return order_counts
-
-
-
-
-
+    return orders
 
 
 def compare_qm_classical():
@@ -99,7 +151,7 @@ def compare_qm_classical():
         if gcd(a, 15) != 1:
             continue
 
-        classical =  find_order_classical(a, N)
+        classical = find_order_classical(a, N)
         qm = find_order_qm(a, N)
         print(a)
         print("classical", classical)
@@ -111,36 +163,6 @@ def compare_qm_classical():
     for co, cl, qm in zip(coprime, clasicals, qms):
         print(f"i: {co}, classical: {cl}, qm: {qm}")
 
-
-
-# main()
-
-# print(f"\nSuccessfully factored {N} into: {factor, int(N/factor)} in {end - start:.8f} seconds.")
-
-# r = 1
-# while r % 2 != 0:
-#     a = randint(2, N-1)
-#     # a = 17
-#     print("a", a)
-#     if gcd(a, N) > 1:
-#         return gcd(a, N)
-    
-#     r = find_order_classical(a, N)
-#     # print(r)
-#     # print(a, r)
-
-
-
-# gcd1 = gcd(a**(r//2) - 1, N)
-# gcd2 = gcd(a**(r//2) + 1, N)
-# print("gcd1", gcd1)
-# print("gcd2", gcd2)
-# if gcd1 != 1:
-#     return gcd1
-# if gcd2 != 1:
-#     return gcd2
-# else:
-#     raise ValueError("Failed to find non-trivial factors of N.")
 
 if __name__ == "__main__":
     n_shots = 10_000

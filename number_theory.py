@@ -92,5 +92,6 @@ def simplify(numerator: int, denominator: int) -> tuple[int, int]:
 
 
 if __name__ == "__main__":
-    print(find_order_classical(8, 15))
+    num = factorize_classical(17**2)
+    print(num)
 
