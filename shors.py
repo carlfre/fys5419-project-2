@@ -10,7 +10,6 @@ from collections import Counter
 from qiskit_implementations import phase_estimation_qiskit
 
 from number_theory import find_order_classical, gcd
-from utils import write_csv
 
 
 def phi_bin_to_order(phi_bin: str, N: int) -> int:
@@ -126,19 +125,6 @@ def shors(
     )
 
 
-def estimated_order_distribution(N: int, a: int, n_shots: int) -> dict[int, int]:
-    """
-    Compute the distribution of estimated orders for a given number of runs.
-    """
-
-    orders = find_order_qm(a, N, n_shots=n_shots)
-
-    filename = f"results/estimated_order_distribution_a={a}_N={N}_shots={n_shots}.csv"
-    write_csv(orders, filename)
-    print(f"Estimated order distribution saved to {filename}")
-    return orders
-
-
 def compare_qm_classical():
 
     N = 15
@@ -164,11 +150,3 @@ def compare_qm_classical():
         print(f"i: {co}, classical: {cl}, qm: {qm}")
 
 
-if __name__ == "__main__":
-    n_shots = 10_000
-    N = 15
-    for a in range(2, N):
-        if gcd(a, N) != 1:
-            continue
-        order_dist = estimated_order_distribution(N, a, n_shots)
-        print(order_dist)
