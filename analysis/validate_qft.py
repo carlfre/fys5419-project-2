@@ -171,8 +171,8 @@ def verify_unitarity(n_qubits: int) -> bool:
 if __name__ == "__main__":
     verify_unitarity(3)
     
-    # apply_to_ket0_and_plot_hist(3, run_type="qft")
-    # apply_to_ket0_and_plot_hist(3, run_type="iqft")
+    apply_to_ket0_and_plot_hist(3, run_type="qft")
+    apply_to_ket0_and_plot_hist(3, run_type="iqft")
 
-    # main("qft")
-    # random_validation("iqft")
+    random_validation("iqft")
+    random_validation("qft")

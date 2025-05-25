@@ -174,8 +174,8 @@ def run_order_computations(use_qiskit: bool):
 
 
 if __name__ == "__main__":
-    # run_order_computations(use_qiskit=False)
-    # run_order_computations(use_qiskit=True)
+    run_order_computations(use_qiskit=False)
+    run_order_computations(use_qiskit=True)
 
     N = 15
     a = 8

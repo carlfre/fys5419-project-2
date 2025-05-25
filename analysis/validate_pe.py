@@ -120,7 +120,6 @@ def timing_phase_estimation():
 
 
 if __name__ == "__main__":
-    # phase_estimation_histogram_1_over_7()
-    # phase_estimation_1_over_7_as_function_of_qubit_count()
-
+    phase_estimation_histogram_1_over_7()
+    phase_estimation_1_over_7_as_function_of_qubit_count()
     timing_phase_estimation()

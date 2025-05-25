@@ -65,5 +65,5 @@ def run_timing_tests_2():
 
 
 if __name__ == "__main__":
-    # run_timing_tests_1()
+    run_timing_tests_1()
     run_timing_tests_2()
