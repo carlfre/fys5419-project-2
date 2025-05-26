@@ -3,8 +3,8 @@ import numpy as np
 
 
 
-def dft(N: int) -> np.ndarray:
-    """N x N Discrete Fourier Transform matrix."""
+def inverse_dft(N: int) -> np.ndarray:
+    """N x N inverse Discrete Fourier Transform matrix."""
     qft = np.zeros((N, N), dtype=complex)
 
     omega = np.exp(2 * np.pi * 1j / N)
@@ -16,6 +16,6 @@ def dft(N: int) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    qft = dft(4)
+    qft = inverse_dft(4)
 
     print(qft)

@@ -5,7 +5,7 @@ import numpy as np
 from quantum_ops import  apply_operator, hadamard
 from quantum_ops import do_the_swap
 from quantum_ops import apply_CU1
-from linear_algebra import dft
+from linear_algebra import inverse_dft
 
 
 
@@ -71,11 +71,11 @@ def example_run():
     psi = np.random.rand(2**N) + 1j * np.random.rand(2**N)
     psi /= np.linalg.norm(psi) 
 
-    dft_mat = dft(2**N)
+    inv_dft_mat = inverse_dft(2**N)
 
     print("Verify that QFT acts the same as DFT matrix:")
-    print("||qft(psi) - dft(psi)|| =", np.linalg.norm(qft(psi.copy()) - dft_mat @ psi.copy()) )
-    print("||inverse_qft(psi) - dft^(-1)(psi)|| =", np.linalg.norm(inverse_qft(psi.copy()) - np.linalg.pinv(dft_mat) @ psi.copy()))
+    print("||qft(psi) - dft^(-1)(psi)|| =", np.linalg.norm(qft(psi.copy()) - inv_dft_mat @ psi.copy()) )
+    print("||inverse_qft(psi) - dft(psi)|| =", np.linalg.norm(inverse_qft(psi.copy()) - np.linalg.pinv(inv_dft_mat) @ psi.copy()))
 
 
 if __name__ == "__main__":

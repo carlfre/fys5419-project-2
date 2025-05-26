@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from qiskit_implementations import inverse_qft_qiskit, qft_qiskit
 from utils import measure, are_distributions_close, latex_table
 from qft import qft, inverse_qft
-from linear_algebra import dft
+from linear_algebra import inverse_dft
 from utils import random_state, measure, freq_to_probabilities
 from quantum_ops import multi_kron
 
@@ -28,16 +28,16 @@ def validate_qft_for_one_state(psi: np.ndarray, n_shots: int = 4096, tol=0.01, r
 
     Closeness is defined by l^∞ distance between empirical distributions being less than tol.
     """
-    dft_mat = dft(len(psi))
+    inv_dft_mat = inverse_dft(len(psi))
 
     if run_type == "qft":
         owncode_measurements = measure(qft(psi.copy()), n_shots)
         qiskit_measurements = qft_qiskit(psi.copy(), n_shots)
-        dft_measurements = measure(dft_mat @ psi.copy(), n_shots)
+        dft_measurements = measure(inv_dft_mat @ psi.copy(), n_shots)
     elif run_type == "iqft":
         owncode_measurements = measure(inverse_qft(psi.copy()), n_shots)
         qiskit_measurements = inverse_qft_qiskit(psi.copy(), n_shots)
-        dft_measurements = measure(np.linalg.pinv(dft_mat) @ psi.copy(), n_shots)    
+        dft_measurements = measure(np.linalg.pinv(inv_dft_mat) @ psi.copy(), n_shots)    
     else:
         raise ValueError("Invalid run_type. Choose 'qft' or 'iqft'.")
 
@@ -83,7 +83,7 @@ def random_validation(run_type: Literal["qft", "iqft"] = "qft"):
 
 def apply_to_ket0_and_plot_hist(n_qubits: int, run_type: Literal["qft", "iqft"] = "qft"):
     n_shots = 4096
-    dft_mat = dft(2**n_qubits)
+    dft_mat = inverse_dft(2**n_qubits)
 
     ket0 = np.array([1, 0])
     ket_list = [ket0] * n_qubits
